@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Crane Control</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <h1>CRANE COMMANDER</h1>
+
+    <div class="container">
+        <!-- E-STOP -->
+        <button class="btn-stop" onclick="sendCmd('STOP')">EMERGENCY STOP</button>
+
+        <!-- X Axis -->
+        <div class="control-group">
+            <h2>Trolley (X-Axis)</h2>
+            <div class="btn-row">
+                <button class="btn-jog" ontouchstart="jog('X', -1)" ontouchend="jog('X', 0)" onmousedown="jog('X', -1)" onmouseup="jog('X', 0)">◄ LEFT</button>
+                <button class="btn-jog" ontouchstart="jog('X', 1)" ontouchend="jog('X', 0)" onmousedown="jog('X', 1)" onmouseup="jog('X', 0)">RIGHT ►</button>
+            </div>
+        </div>
+
+        <!-- Y Axis -->
+        <div class="control-group">
+            <h2>Bridge (Y-Axis)</h2>
+            <div class="btn-row">
+                <button class="btn-jog" ontouchstart="jog('Y', 1)" ontouchend="jog('Y', 0)" onmousedown="jog('Y', 1)" onmouseup="jog('Y', 0)">FWD ▲</button>
+                <button class="btn-jog" ontouchstart="jog('Y', -1)" ontouchend="jog('Y', 0)" onmousedown="jog('Y', -1)" onmouseup="jog('Y', 0)">REV ▼</button>
+            </div>
+        </div>
+
+        <!-- Z Axis -->
+        <div class="control-group">
+            <h2>Hoist (Z-Axis)</h2>
+            <div class="btn-row">
+                <button class="btn-jog" ontouchstart="jog('Z', 1)" ontouchend="jog('Z', 0)" onmousedown="jog('Z', 1)" onmouseup="jog('Z', 0)">UP ▲</button>
+                <button class="btn-jog" ontouchstart="jog('Z', -1)" ontouchend="jog('Z', 0)" onmousedown="jog('Z', -1)" onmouseup="jog('Z', 0)">DOWN ▼</button>
+            </div>
+        </div>
+
+        <!-- System -->
+        <div class="btn-row">
+            <button class="btn-home" onclick="sendCmd('HOME')">HOME ALL</button>
+            <button class="btn-home" style="background:#555" onclick="sendCmd('RESET')">RESET ERROR</button>
+        </div>
+    </div>
+
+    <div class="status-bar" id="status">Connecting...</div>
+
+    <script>
+        var gateway = `ws://${window.location.hostname}/ws`;
+        var websocket;
+
+        window.addEventListener('load', onLoad);
+
+        function onLoad(event) {
+            initWebSocket();
+        }
+
+        function initWebSocket() {
+            console.log('Trying to open a WebSocket connection...');
+            websocket = new WebSocket(gateway);
+            websocket.onopen    = onOpen;
+            websocket.onclose   = onClose;
+            websocket.onmessage = onMessage; 
+        }
+
+        function onOpen(event) {
+            console.log('Connection opened');
+            document.getElementById('status').innerHTML = "SYSTEM CONNECTED";
+            document.getElementById('status').className = "status-bar connected";
+        }
+
+        function onClose(event) {
+            console.log('Connection closed');
+            document.getElementById('status').innerHTML = "DISCONNECTED";
+            document.getElementById('status').className = "status-bar disconnected";
+            setTimeout(initWebSocket, 2000);
+        }
+
+        function onMessage(event) {
+            console.log(event.data);
+        }
+
+        function sendCmd(cmd) {
+            if (websocket.readyState === WebSocket.OPEN) {
+                websocket.send(cmd);
+            }
+        }
+
+        function jog(axis, dir) {
+            // Prevent default touch behaviors (scrolling, etc) if needed
+            // But usually handled by CSS touch-action
+            sendCmd(axis + ":" + dir);
+        }
+        
+        // Prevent context menu on long press
+        window.oncontextmenu = function(event) {
+            event.preventDefault();
+            event.stopPropagation();
+            return false;
+        };
+    </script>
+</body>
+</html>
